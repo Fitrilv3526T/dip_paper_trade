@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dip-X Paper Trader</title>
+<style>
+:root{
+  --bg:#f4f6f9; --panel:#ffffff; --line:#e4e8ee; --txt:#101828; --dim:#667085;
+  --accent:#2563eb; --accent-soft:#eff4ff; --green:#067647; --green-bg:#ecfdf3;
+  --red:#d92d20; --red-bg:#fef3f2; --amber:#b54708; --amber-bg:#fffaeb;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:16px 14px 40px}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px}
+h1{font-size:19px;margin:0;letter-spacing:-.01em}
+h1 small{color:#475467;font-weight:500;font-size:12px;margin-left:8px}
+.meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--dim)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:5px;vertical-align:1px}
+.dot.stale{background:var(--amber)} .dot.bad{background:var(--red)}
+button{background:var(--panel);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;font:inherit;font-size:13px;box-shadow:var(--shadow)}
+button:hover{border-color:var(--accent)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:10px;margin-bottom:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;box-shadow:var(--shadow)}
+.card .k{color:var(--dim);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.card .v{font-size:19px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+.card .s{font-size:11px;color:var(--dim);margin-top:1px}
+.pos{color:var(--green)} .neg{color:var(--red)}
+.banner{background:var(--red-bg);border:1px solid #fecdca;border-radius:12px;padding:10px 14px;margin-bottom:12px;box-shadow:var(--shadow)}
+.banner .t{font-weight:700;color:var(--red);font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+.banner .rows{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chip{background:#fff;border:1px solid #fecdca;border-radius:8px;padding:5px 10px;font-size:13px;font-variant-numeric:tabular-nums}
+.chip b{font-weight:700}
+.warn{background:var(--amber-bg);border:1px solid #fedf89;color:var(--amber);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:12.5px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 10px}
+.tabs button{box-shadow:none;border-radius:999px;padding:6px 14px}
+.tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 10px 10px;box-shadow:var(--shadow);overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px;white-space:nowrap;font-variant-numeric:tabular-nums}
+th{color:var(--dim);font-weight:600;text-align:left;border-bottom:1px solid var(--line);padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+td{padding:8px 10px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:none}
+a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+.dim{color:var(--dim)} .sm{font-size:12px}
+.gauge{position:relative;width:86px;height:10px;background:var(--green-bg);border:1px solid var(--line);border-radius:99px;overflow:hidden;display:inline-block;vertical-align:middle}
+.gauge i{position:absolute;top:0;bottom:0;left:16.7%;width:2px;background:var(--red);opacity:.55}
+.gauge b{position:absolute;top:0;bottom:0;border-radius:99px}
+.tag{padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700}
+.tag.hold{background:var(--accent-soft);color:var(--accent)}
+.tag.sig{background:var(--red-bg);color:var(--red)}
+.tag.ok{background:var(--green-bg);color:var(--green)}
+.tag.no{background:#f2f4f7;color:var(--dim)}
+.holdbar{width:70px;height:10px;background:#eef2f6;border-radius:99px;overflow:hidden;display:inline-block;vertical-align:middle}
+.holdbar i{display:block;height:100%;background:var(--accent);border-radius:99px;min-width:2%}
+.rules h3{margin:16px 4px 6px;font-size:14.5px}
+.rules p,.rules li{font-size:13.5px;color:#344054}
+.rules ul{padding-left:20px;margin:6px 0}
+.rules .box{background:var(--accent-soft);border:1px solid #d1e0ff;border-radius:10px;padding:8px 12px;margin:8px 0;font-size:13px}
+canvas{width:100%;height:220px;display:block}
+.empty{padding:26px;text-align:center;color:var(--dim);font-size:13px}
+footer{color:var(--dim);font-size:11.5px;margin-top:16px;line-height:1.6}
+.pulse{animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+@media(max-width:640px){.card .v{font-size:17px} h1{font-size:17px} .gauge,.holdbar{width:64px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Dip-X Paper Trader <small>top-25 coins &middot; 24h drop &le; -10% &rarr; hold 24h &middot; $20 account, $5 per trade</small></h1>
+  <div class="meta">
+    <span id="stWrap"><span class="dot"></span><span id="stTxt">loading&hellip;</span></span>
+    <span id="nextScan"></span>
+    <button id="btnReload">Refresh</button>
+  </div>
+</header>
+<div id="banner"></div>
+<div id="warn"></div>
+<div class="cards">
+  <div class="card"><div class="k">Equity</div><div class="v" id="kEq">-</div><div class="s" id="kEqS"></div></div>
+  <div class="card"><div class="k">Total P&amp;L</div><div class="v" id="kPnl">-</div><div class="s" id="kPnlS"></div></div>
+  <div class="card"><div class="k">Cash free</div><div class="v" id="kCash">-</div><div class="s" id="kCashS"></div></div>
+  <div class="card"><div class="k">Positions</div><div class="v" id="kOpen">-</div><div class="s">one per coin, $5 each</div></div>
+  <div class="card"><div class="k">Closed trades</div><div class="v" id="kTr">-</div><div class="s" id="kTrS"></div></div>
+  <div class="card"><div class="k">Win rate</div><div class="v" id="kWin">-</div><div class="s" id="kWinS"></div></div>
+  <div class="card"><div class="k">Avg per trade</div><div class="v" id="kAvg">-</div><div class="s" id="kAvgS"></div></div>
+</div>
+<div class="tabs">
+  <button data-t="watch" class="on">Watchlist</button>
+  <button data-t="pos">Positions</button>
+  <button data-t="trades">Trades</button>
+  <button data-t="eq">Equity</button>
+  <button data-t="log">Signal log</button>
+  <button data-t="rules">Rules</button>
+</div>
+<div class="panel" id="body"><div class="empty">Loading state&hellip; If this never loads, run the workflow once (Actions tab &rarr; Dip-X scan &rarr; Run workflow).</div></div>
+<footer>
+  Paper trading only: no orders are placed, no API keys are used. The scanner runs on GitHub Actions every 5 minutes and commits its state; this page re-reads it every 60 s and pulls live prices from Binance's public data API (data-api.binance.vision).
+  Backtest context (2021&ndash;2026, all top-25 USDT pairs): -10% rule &rarr; 53% win rate, +0.9% avg per trade after fees. Past performance does not guarantee anything; this is not financial advice.
+</footer>
+</div>
+<script>
+'use strict';
+const $ = (id) => document.getElementById(id);
+const PKT = 5 * 3600000;
+const fmtT = (ms) => ms ? new Date(ms + PKT).toISOString().slice(0, 16).replace('T', ' ') + ' PKT' : '-';
+const usd = (x, d = 2) => !Number.isFinite(x) ? '-' : (x < 0 ? '-$' : '$') + Math.abs(x).toFixed(d);
+const usdPnl = (x) => !Number.isFinite(x) ? '-' : (x < 0 ? '-$' : '+$') + Math.abs(x).toFixed(Math.abs(x) < 0.1 ? 3 : 2);
+const pct = (x, d = 2) => !Number.isFinite(x) ? '-' : (x >= 0 ? '+' : '') + (x * 100).toFixed(d) + '%';
+const cls = (x) => x > 0 ? 'pos' : x < 0 ? 'neg' : '';
+const px = (p) => p >= 100 ? p.toFixed(1) : p >= 1 ? p.toFixed(3) : p >= 0.01 ? p.toFixed(4) : p.toPrecision(4);
+let S = { state: null, live: {}, liveOk: false, tab: 'watch', timer: null };
+
+async function loadState() {
+  try {
+    const r = await fetch('data/state.json', { cache: 'no-store' });
+    S.state = await r.json();
+  } catch (e) { S.state = null; }
+  await loadLive();
+  render();
+}
+async function loadLive() {
+  if (!S.state || !S.state.watchlist || !S.state.watchlist.length) { S.liveOk = false; return; }
+  const syms = S.state.watchlist.map(w => w.sym).concat(S.state.positions.map(p => p.sym));
+  const u = 'https://data-api.binance.vision/api/v3/ticker/24hr?symbols=' + encodeURIComponent(JSON.stringify([...new Set(syms)]));
+  try {
+    const r = await fetch(u); const d = await r.json();
+    S.live = {}; for (const t of d) S.live[t.symbol] = { price: +t.lastPrice, r24: +t.priceChangePercent / 100, qv: +t.quoteVolume };
+    S.liveOk = true;
+  } catch (e) { S.liveOk = false; }
+}
+
+function render() {
+  const st = S.state;
+  if (!st) { $('stWrap').innerHTML = '<span class="dot bad"></span>no data yet — run the workflow once'; return; }
+  const cfg = st.cfg || {};
+  const ageMin = (Date.now() - (st.updatedMs || st.startMs)) / 60000;
+  $('stWrap').innerHTML = '<span class="dot' + (ageMin > 30 ? ' bad' : ageMin > 12 ? ' stale' : '') + '"></span>' +
+    (ageMin < 1 ? 'updated just now' : 'updated ' + Math.max(1, Math.round(ageMin)) + ' min ago');
+  const eq = st.equityNow != null ? st.equityNow : (st.equity.length ? st.equity[st.equity.length - 1].eq : cfg.startEquity);
+  const start = cfg.startEquity || 20;
+  const open = st.positions || [], closed = st.closed || [];
+  // live mark of open positions
+  const eqLive = eq + open.reduce((a, p) => { const l = S.live[p.sym]; return a + (l ? (l.price - (p.lastPx || p.entryPx)) * p.qty : 0); }, 0);
+  const pnl = eqLive - start;
+  $('kEq').textContent = usd(eqLive); $('kEq').className = 'v ' + cls(eqLive - start);
+  $('kPnl').textContent = (pnl >= 0 ? '+' : '') + usd(pnl); $('kPnl').className = 'v ' + cls(pnl);
+  $('kPnlS').textContent = pct(eqLive / start - 1) + ' of ' + usd(start, 0);
+  $('kCash').textContent = usd(st.cash || 0);
+  $('kCashS').textContent = st.cash >= (cfg.perTrade || 5) - 0.001 ? (Math.floor(st.cash / (cfg.perTrade || 5)) + ' more trade' + (Math.floor(st.cash / (cfg.perTrade || 5)) === 1 ? '' : 's') + ' possible') : 'fully invested';
+  $('kOpen').textContent = open.length + ' / ' + (cfg.maxOpen || 4);
+  const wins = closed.filter(c => c.pnlUsd > 0).length;
+  $('kTr').textContent = closed.length;
+  $('kTrS').textContent = 'judge after 50+';
+  $('kWin').textContent = closed.length ? Math.round(wins / closed.length * 100) + '%' : '-';
+  $('kWinS').textContent = closed.length ? wins + 'W / ' + (closed.length - wins) + 'L' : 'no closed trades yet';
+  const avg = closed.length ? closed.reduce((a, c) => a + c.pnlUsd, 0) / closed.length : NaN;
+  $('kAvg').textContent = closed.length ? (avg >= 0 ? '+' : '') + usd(avg) : '-';
+  $('kAvg').className = 'v ' + cls(avg);
+  $('kAvgS').textContent = closed.length ? 'net of fees, per $5 trade' : 'closed trades only';
+  renderBanner(st, cfg);
+  renderTab(st, cfg);
+}
+function renderBanner(st, cfg) {
+  const thr = (cfg.thresholdPct || -10) / 100;
+  const perTrade = cfg.perTrade || 5;
+  const sigs = (st.watchlist || []).filter(w => { const l = S.live[w.sym]; return l && l.r24 <= thr; });
+  const held = new Set((st.positions || []).map(p => p.sym));
+  const full = (st.positions || []).length >= (cfg.maxOpen || 4) || (st.cash || 0) < perTrade - 0.001;
+  if (!sigs.length) { $('banner').innerHTML = ''; return; }
+  const rows = sigs.map(w => {
+    const l = S.live[w.sym];
+    let act;
+    if (held.has(w.sym)) {
+      const pos = (st.positions || []).find(p => p.sym === w.sym);
+      act = '<span class="tag hold">HOLDING $' + (pos ? pos.entryNotional.toFixed(2) : perTrade.toFixed(2)) + '</span>';
+    }
+    else if (!w.tradeable) act = '<span class="tag no">min order $' + w.minOrderUsd + '</span>';
+    else if (full) act = '<span class="tag no">NO CASH ($' + (st.cash || 0).toFixed(2) + ' free)</span>';
+    else act = '<span class="tag sig pulse">BUY $' + perTrade.toFixed(0) + '</span>';
+    return '<span class="chip">' + act + ' <a href="https://binance.com/en/trade/' + w.sym.replace('USDT', '_USDT') + '" target="_blank" rel="noopener"><b>' + w.sym.replace('USDT', '') + '</b></a> ' +
+      px(l.price) + ' &middot; <b class="neg">' + pct(l.r24, 1) + '/24h</b> &middot; rank #' + w.rank + '</span>';
+  }).join('');
+  $('banner').innerHTML = '<div class="banner"><div class="t">Signal now &mdash; 24h drop beyond ' + (cfg.thresholdPct || -10) + '%</div><div class="rows">' + rows + '</div></div>';
+}
+function gaugeHTML(r24, thr) {
+  // gauge: 0..-12% mapped across full width (r24 is a fraction); red tick at the -10% trigger
+  const w = Math.max(0, Math.min(100, (-r24) / 0.12 * 100));
+  const color = r24 <= thr ? 'var(--red)' : r24 <= thr * 0.55 ? 'var(--amber)' : 'var(--green)';
+  return '<span class="gauge" title="' + pct(r24, 2) + '"><i></i><b style="right:0;width:' + w.toFixed(1) + '%;background:' + color + '"></b></span>';
+}
+function renderTab(st, cfg) {
+  const thr = (cfg.thresholdPct || -10) / 100;
+  const t = S.tab, B = $('body');
+  if (t === 'watch') {
+    const wl = st.watchlist || [], held = new Set((st.positions || []).map(p => p.sym));
+    let h = '<table><tr><th>#</th><th>Coin</th><th>Price</th><th>24h</th><th>dip meter</th><th>30d vol/day</th><th>$5 order</th><th>Status</th></tr>';
+    for (const w of wl) {
+      const l = S.live[w.sym], r = l ? l.r24 : null;
+      const sttx = held.has(w.sym) ? '<span class="tag hold">holding</span>' : (r != null && r <= thr ? '<span class="tag sig">signal</span>' : '<span class="dim sm">-</span>');
+      h += '<tr><td class="dim">' + w.rank + '</td><td><a href="https://binance.com/en/trade/' + w.sym.replace('USDT', '_USDT') + '" target="_blank" rel="noopener">' + w.sym.replace('USDT', '') + '</a></td>' +
+        '<td>' + (l ? px(l.price) : '<span class="dim">-</span>') + '</td>' +
+        '<td class="' + (r != null ? cls(-r) : '') + '">' + (r != null ? pct(r, 2) : '-') + '</td>' +
+        '<td>' + (r != null ? gaugeHTML(r, thr) : '') + '</td>' +
+        '<td class="dim">$' + Math.round(w.qv30 / 1e6) + 'M</td>' +
+        '<td>' + (w.tradeable ? '<span class="tag ok">yes</span>' : '<span class="tag no">$' + w.minOrderUsd + '</span>') + '</td>' +
+        '<td>' + sttx + '</td></tr>';
+    }
+    h += '</table>' + (S.liveOk ? '' : '<div class="empty">Live prices unavailable here &mdash; showing last scanned data.</div>');
+    B.innerHTML = h;
+  } else if (t === 'pos') {
+    const ps = st.positions || [];
+    if (!ps.length) { B.innerHTML = '<div class="empty">No open positions. The scanner will enter automatically when a top-25 coin drops ' + (cfg.thresholdPct || -10) + '% in 24h.</div>'; return; }
+    let h = '<table><tr><th>Coin</th><th>Entered</th><th>Entry</th><th>Now</th><th>Size</th><th>Hold progress</th><th>Exits in</th><th>Unrealized</th></tr>';
+    for (const p of ps) {
+      const l = S.live[p.sym], now = l ? l.price : (p.lastPx || p.entryPx);
+      const upnl = (now - p.entryPx) * p.qty;
+      const prog = Math.min(100, (Date.now() - p.entryMs) / ((cfg.holdHours || 24) * 3600000) * 100);
+      const mins = Math.max(0, (p.exitDueMs - Date.now()) / 60000);
+      h += '<tr><td><b>' + p.sym.replace('USDT', '') + '</b></td><td class="dim sm">' + fmtT(p.entryMs) + '</td><td>' + px(p.entryPx) + '</td><td>' + px(now) + '</td>' +
+        '<td class="dim">' + usd(p.entryNotional) + '</td>' +
+        '<td><span class="holdbar"><i style="width:' + prog.toFixed(0) + '%"></i></span> <span class="dim sm">' + prog.toFixed(0) + '%</span></td>' +
+        '<td class="dim">' + (mins > 60 ? Math.floor(mins / 60) + 'h ' + Math.round(mins % 60) + 'm' : Math.round(mins) + 'm') + '</td>' +
+        '<td class="' + cls(upnl) + '">' + usdPnl(upnl) + ' (' + pct(upnl / p.costBasis) + ')</td></tr>';
+    }
+    B.innerHTML = h + '</table><p class="sm dim" style="padding:6px 10px">Time exit only &mdash; no stop-loss (in the backtest, 64% of winners dipped &ge;3% further before bouncing).</p>';
+  } else if (t === 'trades') {
+    const cs = (st.closed || []).slice().reverse();
+    if (!cs.length) { B.innerHTML = '<div class="empty">No closed trades yet. Expect roughly 3&ndash;8 per week with the -10% rule on top-25 coins.</div>'; return; }
+    let h = '<table><tr><th>#</th><th>Coin</th><th>Entered</th><th>Exited</th><th>Hold</th><th>Entry</th><th>Exit</th><th>24h drop at entry</th><th>P&amp;L</th></tr>';
+    cs.forEach((c, i) => {
+      h += '<tr><td class="dim">' + (cs.length - i) + '</td><td><b>' + c.sym.replace('USDT', '') + '</b></td>' +
+        '<td class="dim sm">' + fmtT(c.entryMs) + '</td><td class="dim sm">' + fmtT(c.exitMs) + '</td>' +
+        '<td class="dim">' + c.holdH + 'h</td><td>' + px(c.entryPx) + '</td><td>' + px(c.exitPx) + '</td>' +
+        '<td class="neg">' + (c.signalR24 * 100).toFixed(1) + '%</td>' +
+        '<td class="' + cls(c.pnlUsd) + '"><b>' + usdPnl(c.pnlUsd) + '</b> (' + pct(c.pnlPct / 100) + ')</td></tr>';
+    });
+    B.innerHTML = h + '</table>';
+  } else if (t === 'eq') {
+    const eq = st.equity || [];
+    if (eq.length < 2) { B.innerHTML = '<div class="empty">Equity curve appears after the first trades. Starts at ' + usd((st.cfg || {}).startEquity || 20, 0) + '.</div>'; return; }
+    B.innerHTML = '<canvas id="eqc" width="1100" height="220"></canvas><p class="sm dim" style="padding:6px 10px">' + fmtT(eq[0].t) + ' &rarr; ' + fmtT(eq[eq.length - 1].t) + ' &middot; ' + eq.length + ' points</p>';
+    drawEq(eq);
+  } else if (t === 'log') {
+    const lg = (st.log || []).slice(0, 200);
+    if (!lg.length) { B.innerHTML = '<div class="empty">Signal log is empty so far.</div>'; return; }
+    const tagCls = { ENTER: 'tag sig', EXIT: 'tag ok', SKIP_MIN_ORDER: 'tag no', SKIP_NO_CASH: 'tag no', SKIP_ALREADY_OPEN: 'tag no', SKIP_MAX_OPEN: 'tag no' };
+    let h = '<table><tr><th>Time (PKT)</th><th>Coin</th><th>24h drop</th><th>Action</th><th>Note</th></tr>';
+    for (const l of lg) h += '<tr><td class="dim sm">' + fmtT(l.ms) + '</td><td><b>' + l.sym.replace('USDT', '') + '</b></td><td class="neg">' + l.r24 + '%</td>' +
+      '<td><span class="' + (tagCls[l.action] || 'tag no') + '">' + l.action + '</span></td><td class="dim sm">' + (l.note || '') + '</td></tr>';
+    B.innerHTML = h + '</table>';
+  } else if (t === 'rules') {
+    const c = st.cfg || {};
+    B.innerHTML = '<div class="rules" style="padding:8px 10px">' +
+      '<h3>Strategy (from the validated backtest)</h3><ul>' +
+      '<li><b>Universe:</b> top ' + (c.topN || 25) + ' Binance USDT spot coins by <b>30-day median daily volume</b> (stables and leveraged tokens excluded, refreshed every 6 h).</li>' +
+      '<li><b>Entry:</b> when a coin\u2019s last closed 1h bar shows a 24h drop of <b>' + (c.thresholdPct || -10) + '% or worse</b> \u2192 buy <b>$' + (c.perTrade || 5).toFixed(0) + '</b> at market. Most-liquid coin first when several fire together.</li>' +
+      '<li><b>Exit:</b> exactly <b>' + (c.holdHours || 24) + 'h</b> later (time exit). <b>No stop-loss</b> \u2014 64% of winning trades in the backtest dipped at least 3% further before the bounce.</li>' +
+      '<li><b>Position limits:</b> max ' + (c.maxOpen || 4) + ' open, one per coin, re-entry allowed right after an exit.</li>' +
+      '<li><b>Fees:</b> ' + ((c.feePctSide || 0.001) * 100).toFixed(2) + '% per side (0.2% round trip), deducted like the real thing.</li>' +
+      '<li><b>$5 filter:</b> coins whose real Binance minimum order (min notional / lot size) is above $' + (c.perTrade || 5) + ' are skipped and shown in the watchlist.</li></ul>' +
+      '<div class="box"><b>Account:</b> $' + (c.startEquity || 20) + ' starting capital, $' + (c.perTrade || 5).toFixed(0) + ' fixed per trade, started ' + fmtT(c.startMs) + '. Settings live in <code>config.json</code> \u2014 edit it in the repo and the next scan picks it up. Delete <code>docs/data/state.json</code> (and run the workflow) to restart the account.</div>' +
+      '<h3>What to expect</h3><p>With the -10% rule on top-25 coins the backtest (2021&ndash;2026) gave ~' + (c.topN || 25) + '-coin average: <b>53% win rate, +0.9% per trade after fees</b>, but only ~5 signals per week &mdash; and 2024&ndash;25 was weaker than 2021&ndash;22. On a $5 trade a +0.9% average is about <b>+4.5 cents</b>. Give it 50+ closed trades before judging; that\u2019s roughly 2&ndash;3 months.</p>' +
+      '<h3>Safety notes</h3><ul><li>Before ever doing this with real money, glance at Binance announcements \u2014 a crash + delisting notice means do not buy (LUNA-style tail). The paper trader cannot check news.</li>' +
+      '<li>Never buy a \u201cdip\u201d on a stablecoin \u2014 that\u2019s a depeg, not a dip (stables are already excluded here).</li>' +
+      '<li>Small accounts bleed to fees: 0.2% round trip on $5 is 1 cent; the edge must clear it, and it does in the backtest, barely \u2014 expect a bumpy, slow curve.</li></ul>' +
+      '</div>';
+  }
+}
+function drawEq(eq) {
+  const cv = $('eqc'); if (!cv) return;
+  const dpr = window.devicePixelRatio || 1, W = cv.clientWidth || 1100, H = 220;
+  cv.width = W * dpr; cv.height = H * dpr;
+  const g = cv.getContext('2d'); g.scale(dpr, dpr);
+  const vals = eq.map(e => e.eq), lo = Math.min(...vals), hi = Math.max(...vals);
+  const pad = Math.max((hi - lo) * 0.12, 0.25);
+  const y = (v) => 18 + (H - 40) * (1 - (v - (lo - pad)) / ((hi + pad) - (lo - pad)));
+  const x = (i) => 46 + (W - 60) * (i / (eq.length - 1));
+  g.clearRect(0, 0, W, H);
+  g.strokeStyle = '#e4e8ee'; g.fillStyle = '#667085'; g.font = '11px system-ui'; g.textAlign = 'right';
+  for (const v of [lo - pad, (lo + hi) / 2, hi + pad]) { g.beginPath(); g.moveTo(46, y(v)); g.lineTo(W - 8, y(v)); g.stroke(); g.fillText('$' + v.toFixed(2), 42, y(v) + 4); }
+  const up = vals[vals.length - 1] >= vals[0];
+  g.strokeStyle = up ? '#067647' : '#d92d20'; g.lineWidth = 2; g.beginPath();
+  eq.forEach((e, i) => { i ? g.lineTo(x(i), y(e.eq)) : g.moveTo(x(i), y(e.eq)); }); g.stroke();
+  g.fillStyle = up ? '#067647' : '#d92d20'; g.textAlign = 'left'; g.font = '600 12px system-ui';
+  g.fillText('$' + vals[vals.length - 1].toFixed(2), x(eq.length - 1) - 44, y(vals[vals.length - 1]) - 8);
+}
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); S.tab = b.dataset.t; render();
+});
+$('btnReload').onclick = loadState;
+setInterval(loadState, 60000);
+setInterval(() => {
+  const m = new Date().getMinutes(), s = new Date().getSeconds();
+  const left = (4 - (m % 5)) * 60 + (60 - s);
+  $('nextScan').textContent = 'next scan in ' + Math.floor(left / 60) + 'm ' + (left % 60 + '').padStart(2, '0') + 's';
+}, 1000);
+loadState();
+</script>
+</body>
+</html>

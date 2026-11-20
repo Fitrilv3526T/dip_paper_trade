@@ -1,0 +1,10 @@
+{
+  "startEquity": 20,
+  "perTrade": 5,
+  "feePctSide": 0.001,
+  "thresholdPct": -10,
+  "topN": 25,
+  "holdHours": 24,
+  "maxOpen": 4,
+  "minOrderUsd": 5
+}
